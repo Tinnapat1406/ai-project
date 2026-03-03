@@ -99,6 +99,7 @@ while True:
         name, dist = identify_face(pil_img, threshold=0.8)
         color = (0, 255, 0) if name != "unknown" else (0, 0, 255)
 
+
         cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 
         label = f"{name} ({dist:.2f})"
