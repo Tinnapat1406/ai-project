@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Attendance Logs - Face Attendance</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/logs.css') }}">
+</head>
+<body>
+
+  <div class="nav-top">
+    <div class="nav-brand">Attendance Logs</div>
+    <div class="nav-links">
+      <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+      <a href="{{ url_for('scan') }}" class="nav-link">Scan</a>
+      <a href="{{ url_for('enroll') }}" class="nav-link">Register</a>
+    </div>
+  </div>
+
+
+  <div class="logs-container">
+    <div class="logs-header">
+      <div class="logs-title-wrap">
+        <h1>Attendance History</h1>
+        <p class="logs-desc">Complete record of all face recognition check-ins</p>
+      </div>
+      {% if rows|length > 1 %}
+      <div class="logs-stats">
+        <div class="stat-box">
+          <div class="stat-number">{{ rows|length - 1 }}</div>
+          <div class="stat-label">Total Records</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if rows|length > 1 %}
+
+    <div class="controls-bar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search by name or ID...">
+      </div>
+      <button class="btn-export" onclick="exportData()">Export CSV</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="logsTable">
+        <thead>
+          <tr>
+            <th style="width:6%">#</th>
+            <th style="width:28%">Name / ID</th>
+            <th style="width:36%">Date & Time</th>
+            <th style="width:30%">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% for row in rows[1:] %}  {# Skip header row #}
+          <tr class="data-row" data-name="{{ row[0]|lower }}">
+            <td class="row-num">{{ loop.index }}</td>
+            <td class="name-cell">{{ row[0] }}</td>
+            <td class="time-cell">{{ row[1] }}</td>
+            <td>
+              {% if row[2] == "check-in" %}
+                <span class="badge badge-checkin">✓ Check-in</span>
+              {% else %}
+                <span class="badge badge-checkin">{{ row[2] }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="logs-footer">
+      <span>Data stored in <code>attendance.csv</code></span>
+      <span>Total: <strong>{{ rows|length - 1 }} records</strong></span>
+    </div>
+    {% else %}
+
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h2>No attendance records yet</h2>
+      <p>Start scanning faces to record attendance.</p>
+      <a href="{{ url_for('scan') }}">→ Go to Face Scan</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+
+    const searchInput = document.getElementById("searchInput");
+    const tableBody = document.getElementById("tableBody");
+    const rows = tableBody?.querySelectorAll(".data-row") || [];
+
+    if(searchInput){
+      searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase();
+        rows.forEach(row => {
+          const name = row.getAttribute("data-name");
+          row.style.display = name.includes(query) ? "" : "none";
+        });
+      });
+    }
+
+
+    function exportData(){
+      const table = document.getElementById("logsTable");
+      if(!table) return;
+
+      let csv = "Name/ID,Date & Time,Status\n";
+      const dataRows = table.querySelectorAll("tbody tr");
+      dataRows.forEach(row => {
+        if(row.style.display !== "none"){
+          const cells = row.querySelectorAll("td");
+          const name = cells[1]?.textContent || "";
+          const time = cells[2]?.textContent || "";
+          const status = cells[3]?.textContent?.trim() || "";
+          csv += `"${name}","${time}","${status}"\n`;
+        }
+      });
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `attendance_${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

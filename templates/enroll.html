@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Register Face - Face Attendance</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/enroll.css') }}">
+</head>
+<body>
+
+  <div class="nav-top">
+    <div class="nav-brand">Register</div>
+    <div class="nav-links">
+      <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+      <a href="{{ url_for('scan') }}" class="nav-link">Scan</a>
+      <a href="{{ url_for('logs') }}" class="nav-link">History</a>
+    </div>
+  </div>
+
+  <div class="enroll-wrapper">
+    <!-- Register Card -->
+    <div class="enroll-card">
+      <h2 class="card-title">Add New Face</h2>
+      <p class="card-desc">Capture</p>
+      <!-- Name Input -->
+      <div class="form-group">
+        <label class="form-label">Name / Student ID</label>
+        <input id="nameInput" type="text" class="form-input"
+               placeholder="e.g., 65012345 or John">
+      </div>
+      <!-- Video Preview -->
+      <div class="preview-container">
+        <video id="video" autoplay playsinline></video>
+      </div>
+      <!-- Capture Button -->
+      <button id="captureBtn" class="btn-capture">
+         Capture & Register
+      </button>
+      <div id="status" class="status-box"></div>
+    </div>
+    <canvas id="canvas" style="display:none"></canvas>
+
+    
+    <div class="list-section">
+      <h3 class="list-title">Registered Faces</h3>
+      <div id="faceList" class="face-list">
+        <div class="empty-list">Loading registered faces...</div>
+      </div>
+    </div>
+  </div>
+  
+<!-- JavaScript -->
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const captureBtn = document.getElementById("captureBtn");
+    const statusEl = document.getElementById("status");
+    const nameInput = document.getElementById("nameInput");
+
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        showStatus("Cannot open camera: " + err.message, "error");
+      });
+
+    function showStatus(msg, type = "info"){
+      statusEl.textContent = msg;
+      statusEl.classList.remove("success", "error");
+      if(type) statusEl.classList.add(type);
+      statusEl.classList.add("show");
+    }
+
+    captureBtn.addEventListener("click", async () => {
+      const name = nameInput.value.trim();
+      if(!name){
+        showStatus("Please enter a name", "error");
+        return;
+      }
+
+      captureBtn.disabled = true;
+      captureBtn.textContent = "Capturing...";
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL("image/png");
+
+      try{
+        const res = await fetch("/api/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, image: dataUrl })
+        });
+
+        const json = await res.json();
+
+        if(json.ok){
+          showStatus(`Captured: ${json.message}. Please ensure you capture multiple images for better recognition.`, "success");
+          loadFaceList();
+        } else {
+          showStatus(` Error: ${json.message}`, "error");
+        }
+      }catch(err){
+        showStatus("Network error", "error");
+      }
+
+      captureBtn.disabled = false;
+      captureBtn.textContent = "Capture More";
+    });
+
+    async function loadFaceList(){
+      const listEl = document.getElementById("faceList");
+      try{
+        const res = await fetch("/api/list_faces");
+        const data = await res.json();
+
+        if(!data.ok || !data.names || data.names.length === 0){
+          listEl.innerHTML = '<div class="empty-list"> No registered faces yet</div>';
+          return;
+        }
+
+        listEl.innerHTML = data.names.map(name => `
+          <div class="face-item">
+            <span class="face-name"> ${name}</span>
+            <button class="btn-delete" onclick="deleteFace('${name}')">Delete</button>
+          </div>
+        `).join("");
+      }catch(err){
+        listEl.innerHTML = '<div class="empty-list"> Error loading faces</div>';
+      }
+    }
+
+    async function deleteFace(name){
+      if(!confirm(`Delete "${name}" from the system?`)) return;
+
+      showStatus(`Deleting "${name}"...`, "info");
+      try{
+        const res = await fetch("/api/delete_face", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name })
+        });
+
+        const data = await res.json();
+        if(data.ok){
+          showStatus(`Deleted: ${name}`, "success");
+          loadFaceList();
+        } else {
+          showStatus(`Error: ${data.message}`, "error");
+        }
+      }catch(err){
+        showStatus(" Error occurred", "error");
+      }
+    }
+
+    window.addEventListener("load", loadFaceList);
+  </script>
+</body>
+</html>

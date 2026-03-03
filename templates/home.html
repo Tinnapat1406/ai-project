@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Face Attendance</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+  <video id="bg-video" autoplay muted loop playsinline>
+    <source src="{{ url_for('static', filename='assets/bg.mp4') }}" type="video/mp4">
+    <!-- fallback text -->
+  </video>
+
+  <div id="bg-overlay"></div>
+
+  <div class="title">Face Attendance</div>
+
+  <main class="actions">
+    <a class="action scan" href="{{ url_for('scan') }}" title="Face Scan">
+      <div class="icon" aria-hidden>
+        <!-- camera SVG simple -->
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" stroke="#f8fafc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 7h-3.2l-1.6-2H8.8L7.2 7H4v11h16V7z" stroke="#f8fafc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="label">Face Scan</div>
+    </a>
+
+    <a class="action register" href="{{ url_for('enroll') }}" title="Register">
+      <div class="icon" aria-hidden>
+        <!-- plus / user -->
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" stroke="#f8fafc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20c0-2.761 3.582-5 8-5s8 2.239 8 5" stroke="#f8fafc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="label">Register</div>
+    </a>
+
+    <a class="action history" href="{{ url_for('logs') }}" title="History">
+      <div class="icon" aria-hidden>
+        <!-- list / clipboard -->
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 2h6l1 2h3v17H2V4h3l1-2z" stroke="#f8fafc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 11h8M8 15h8" stroke="#f8fafc" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="label">History</div>
+    </a>
+  </main>
+
+</body>
+</html>

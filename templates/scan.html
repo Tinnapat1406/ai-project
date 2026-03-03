@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Face Scan - Face Attendance</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/scan.css') }}">
+</head>
+<body>
+
+  <div class="nav-top">
+    <div class="nav-brand"> Face Scan</div>
+    <div class="nav-links">
+      <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+      <a href="{{ url_for('enroll') }}" class="nav-link">Register</a>
+      <a href="{{ url_for('logs') }}" class="nav-link">History</a>
+    </div>
+  </div>
+
+  <div class="scan-container">
+    <h1 class="scan-title">Face Scan</h1>
+    <p class="scan-desc">Position your face in the camera and press the button below to scan and record attendance.</p>
+
+    
+    <div class="preview-box" id="preview">
+      <img src="{{ url_for('video_feed') }}" alt="Live camera feed" id="cam-stream">
+    </div>
+
+  
+    <div style="text-align:center;margin-bottom:20px">
+      <p id="status-text" style="color:var(--muted);font-size:0.9rem">Scanning face...</p>
+    </div>
+
+    
+    <div class="result-box" id="result"></div>
+  </div>
+
+  <script>
+    function startScan(){
+      const result = document.getElementById('result');
+      const statusText = document.getElementById('status-text');
+      
+      statusText.textContent = 'Processing scan...';
+      result.classList.remove('show');
+      
+      try{
+        fetch('/api/checkin_once', {method:'POST'})
+          .then(res => res.json())
+          .then(data => {
+            if(data.ok && data.name !== 'unknown'){
+              result.style.background = 'rgba(34,197,94,.1)';
+              result.style.borderColor = 'rgba(34,197,94,.5)';
+              result.innerHTML = `<strong>${data.name}</strong><br>Attendance recorded (${data.message})`;
+              statusText.textContent = '✓ Scan complete!';
+            } else {
+              result.style.background = 'rgba(239,68,68,.1)';
+              result.style.borderColor = 'rgba(239,68,68,.5)';
+              result.innerHTML = 'Face not recognized.<br>Please register first.';
+              statusText.textContent = 'Face not recognized';
+            }
+            result.classList.add('show');
+          })
+          .catch(e => {
+            result.style.background = 'rgba(107,114,128,.1)';
+            result.style.borderColor = 'rgba(107,114,128,.5)';
+            result.innerHTML = 'Error: ' + (e.message || 'Unknown error');
+            result.classList.add('show');
+            statusText.textContent = 'Error occurred';
+          });
+      }catch(e){
+        result.style.background = 'rgba(107,114,128,.1)';
+        result.style.borderColor = 'rgba(107,114,128,.5)';
+        result.innerHTML = 'Error: ' + (e.message || 'Unknown error');
+        result.classList.add('show');
+        statusText.textContent = 'Error occurred';
+      }
+    }
+    
+    window.addEventListener('load', function(){
+      setTimeout(startScan, 500);
+    });
+  </script>
+</body>
+</html>
